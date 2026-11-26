@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe — Play Free</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- PUBLIC INTERFACE: TIC-TAC-TOE GAME (WITH SMART COMPUTER AI) -->
+  <div id="game-view" class="view-active">
+    <header class="game-header">
+      <h1 id="secret-title" title="Play Game">TIC TAC TOE</h1>
+      <p class="subtitle">You (X) vs Computer (O)</p>
+    </header>
+
+    <div class="status-bar" id="game-status">Your Turn (X)</div>
+
+    <div class="board" id="board">
+      <div class="cell" data-index="0"></div>
+      <div class="cell" data-index="1"></div>
+      <div class="cell" data-index="2"></div>
+      <div class="cell" data-index="3"></div>
+      <div class="cell" data-index="4"></div>
+      <div class="cell" data-index="5"></div>
+      <div class="cell" data-index="6"></div>
+      <div class="cell" data-index="7"></div>
+      <div class="cell" data-index="8"></div>
+    </div>
+
+    <button id="reset-game-btn" class="secondary-btn">New Game</button>
+  </div>
+
+  <!-- SECRET ACCESS MODAL (5 TAPS ON TITLE) -->
+  <div id="secret-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-title">Discreet Unlock</h3>
+        <button id="close-modal-btn" class="close-icon">&times;</button>
+      </div>
+
+      <!-- State 1: Returning User (Only Numeric Passcode) -->
+      <div id="auth-login-step" class="auth-step">
+        <p class="hint">Enter your numeric passcode to unlock.</p>
+        <div class="form-group">
+          <label>Secret Passcode</label>
+          <input type="password" id="unlock-passcode" inputmode="numeric" pattern="[0-9]*" placeholder="Enter numeric passcode" autofocus>
+        </div>
+        <button id="unlock-submit-btn" class="primary-btn">Unlock</button>
+        <p class="switch-link"><a href="#" id="to-register-link">New here? Register with Indian Mobile & OTP</a></p>
+      </div>
+
+      <!-- State 2: New User Phone Registration with +91 Preset -->
+      <div id="auth-register-step" class="auth-step hidden">
+        <p class="hint">Enter your 10-digit Indian mobile number to receive OTP.</p>
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <div class="phone-input-preset">
+            <span class="country-prefix">+91</span>
+            <input type="tel" id="reg-phone" maxlength="10" inputmode="numeric" placeholder="9876543210">
+          </div>
+        </div>
+        <button id="send-otp-btn" class="primary-btn">Send OTP</button>
+        <p class="switch-link"><a href="#" id="to-login-link">Already registered? Enter Passcode</a></p>
+      </div>
+
+      <!-- State 3: OTP Verification -->
+      <div id="auth-otp-step" class="auth-step hidden">
+        <p class="hint">OTP has been sent to your registered number via SMS. Enter the correct OTP:</p>
+        <div class="form-group">
+          <label>6-Digit OTP</label>
+          <input type="text" id="otp-input" maxlength="6" inputmode="numeric" placeholder="123456">
+        </div>
+        <button id="verify-otp-btn" class="primary-btn">Verify OTP</button>
+      </div>
+
+      <!-- State 4: Set Numeric Passcode with Strength Validation -->
+      <div id="auth-password-step" class="auth-step hidden">
+        <p class="hint">Set your secret numeric passcode (4–8 digits). Avoid simple sequences like 1234 or 1111.</p>
+        <div class="form-group">
+          <label>Numeric Passcode</label>
+          <input type="password" id="set-password-input" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 749281">
+        </div>
+        <button id="save-password-btn" class="primary-btn">Save Passcode & Enter</button>
+      </div>
+
+      <div id="auth-error-msg" class="error-msg hidden"></div>
+    </div>
+  </div>
+
+  <!-- MULTI-USER MESSAGING INTERFACE (WHATSAPP-STYLE WITH CONTACT LIST & AUDIO RECORDING) -->
+  <div id="chat-view" class="hidden">
+    <!-- Screen A: Contact List & Chats Overview -->
+    <div id="contacts-screen" class="contacts-wrapper">
+      <header class="contacts-header">
+        <div class="user-profile-badge">
+          <div class="avatar">👤</div>
+          <div>
+            <h4 id="my-phone-display">My Chats</h4>
+            <span class="online-tag">Online</span>
+          </div>
+        </div>
+        <button id="lock-app-btn" class="lock-btn" title="Exit to Tic-Tac-Toe">🔒 Lock</button>
+      </header>
+
+      <!-- Sync / Add Contact Bar with +91 Preset -->
+      <div class="contact-action-bar">
+        <div class="phone-input-preset" style="flex:1;">
+          <span class="country-prefix">+91</span>
+          <input type="tel" id="new-contact-phone" maxlength="10" inputmode="numeric" placeholder="10-digit mobile number">
+        </div>
+        <button id="check-contact-btn" class="add-btn">+ Chat</button>
+      </div>
+
+      <div class="contacts-section-title">Registered Contacts</div>
+      <div id="registered-contacts-list" class="contacts-list">
+        <!-- Dynamically rendered -->
+      </div>
+
+      <div class="contacts-section-title">Invite to Secret Chat</div>
+      <div id="unregistered-contacts-list" class="contacts-list unregistered">
+        <!-- Dynamically rendered -->
+      </div>
+    </div>
+
+    <!-- Screen B: Active 1-to-1 Chat Window -->
+    <div id="active-chat-window" class="chat-wrapper hidden">
+      <header class="chat-header">
+        <div class="chat-contact-info">
+          <button id="back-to-contacts-btn" class="back-btn">←</button>
+          <div class="avatar">👤</div>
+          <div>
+            <h3 id="chat-partner-name">Contact</h3>
+            <span id="chat-partner-status" class="status-indicator">Online</span>
+          </div>
+        </div>
+        <button id="lock-chat-btn" class="lock-btn">🔒 Lock</button>
+      </header>
+
+      <div class="messages-container" id="messages-container">
+        <!-- Messages rendered here -->
+      </div>
+
+      <!-- Audio Recording Banner (Active when recording voice) -->
+      <div id="recording-banner" class="recording-banner hidden">
+        <span class="recording-pulse">🔴</span>
+        <span id="recording-timer">Recording: 0s</span>
+        <button id="cancel-record-btn" class="cancel-record-btn">Cancel</button>
+      </div>
+
+      <footer class="chat-footer">
+        <label for="media-file-input" class="attach-btn" title="Attach Media">📎</label>
+        <input type="file" id="media-file-input" class="hidden" accept="image/*,audio/*,video/*">
+
+        <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
+
+        <!-- Voice / Audio Recording Button -->
+        <button id="voice-record-btn" class="record-btn" title="Hold/Tap to record voice">🎙️</button>
+
+        <button id="send-btn" class="send-btn">➤</button>
+      </footer>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
