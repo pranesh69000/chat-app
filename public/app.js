@@ -178,6 +178,13 @@ closeModalBtn.addEventListener('click', () => {
 });
 
 function openSecretModal() {
+  // Always clear all auth inputs to prevent browser autofill showing old data
+  document.getElementById('login-phone').value = '';
+  document.getElementById('login-passcode').value = '';
+  document.getElementById('reg-phone').value = '';
+  document.getElementById('reg-passcode').value = '';
+  clearError();
+
   secretModal.classList.remove('hidden');
   showAuthStep('auth-login-step');
   document.getElementById('login-phone').focus();
@@ -200,6 +207,11 @@ function showAuthStep(stepId) {
   clearError();
   document.querySelectorAll('.auth-step').forEach(step => step.classList.add('hidden'));
   document.getElementById(stepId).classList.remove('hidden');
+  // Clear all inputs every time a step is shown
+  ['login-phone','login-passcode','reg-phone','reg-passcode'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
 }
 
 document.getElementById('to-register-link').addEventListener('click', (e) => {
