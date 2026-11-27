@@ -39,20 +39,27 @@
         <button id="close-modal-btn" class="close-icon">&times;</button>
       </div>
 
-      <!-- State 1: Returning User (Only Numeric Passcode) -->
+      <!-- Login: Phone + Passcode -->
       <div id="auth-login-step" class="auth-step">
-        <p class="hint">Enter your numeric passcode to unlock.</p>
+        <p class="hint">Enter your mobile number and passcode.</p>
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <div class="phone-input-preset">
+            <span class="country-prefix">+91</span>
+            <input type="tel" id="login-phone" maxlength="10" inputmode="numeric" placeholder="9876543210">
+          </div>
+        </div>
         <div class="form-group">
           <label>Secret Passcode</label>
-          <input type="password" id="unlock-passcode" inputmode="numeric" pattern="[0-9]*" placeholder="Enter numeric passcode" autofocus>
+          <input type="password" id="login-passcode" inputmode="numeric" pattern="[0-9]*" placeholder="Enter numeric passcode">
         </div>
-        <button id="unlock-submit-btn" class="primary-btn">Unlock</button>
-        <p class="switch-link"><a href="#" id="to-register-link">New here? Register with Indian Mobile & OTP</a></p>
+        <button id="login-submit-btn" class="primary-btn">Unlock</button>
+        <p class="switch-link"><a href="#" id="to-register-link">New here? Create account</a></p>
       </div>
 
-      <!-- State 2: New User Phone Registration with +91 Preset -->
+      <!-- Register: Phone + Passcode (first time) -->
       <div id="auth-register-step" class="auth-step hidden">
-        <p class="hint">Enter your 10-digit Indian mobile number to receive OTP.</p>
+        <p class="hint">Choose a numeric passcode (4–8 digits). Avoid 1234, 1111.</p>
         <div class="form-group">
           <label>Mobile Number</label>
           <div class="phone-input-preset">
@@ -60,28 +67,12 @@
             <input type="tel" id="reg-phone" maxlength="10" inputmode="numeric" placeholder="9876543210">
           </div>
         </div>
-        <button id="send-otp-btn" class="primary-btn">Send OTP</button>
-        <p class="switch-link"><a href="#" id="to-login-link">Already registered? Enter Passcode</a></p>
-      </div>
-
-      <!-- State 3: OTP Verification -->
-      <div id="auth-otp-step" class="auth-step hidden">
-        <p class="hint">OTP has been sent to your registered number via SMS. Enter the correct OTP:</p>
         <div class="form-group">
-          <label>6-Digit OTP</label>
-          <input type="text" id="otp-input" maxlength="6" inputmode="numeric" placeholder="123456">
+          <label>Set Passcode</label>
+          <input type="password" id="reg-passcode" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 749281">
         </div>
-        <button id="verify-otp-btn" class="primary-btn">Verify OTP</button>
-      </div>
-
-      <!-- State 4: Set Numeric Passcode with Strength Validation -->
-      <div id="auth-password-step" class="auth-step hidden">
-        <p class="hint">Set your secret numeric passcode (4–8 digits). Avoid simple sequences like 1234 or 1111.</p>
-        <div class="form-group">
-          <label>Numeric Passcode</label>
-          <input type="password" id="set-password-input" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 749281">
-        </div>
-        <button id="save-password-btn" class="primary-btn">Save Passcode & Enter</button>
+        <button id="register-submit-btn" class="primary-btn">Create Account</button>
+        <p class="switch-link"><a href="#" id="to-login-link">Already registered? Log in</a></p>
       </div>
 
       <div id="auth-error-msg" class="error-msg hidden"></div>

@@ -1,11 +1,11 @@
-// CONFIGURATION: Auto-detects local vs remote backend URL
-// When running locally, it defaults to window.location.origin
-// When deployed on Cloudflare Pages, change this or set it via localStorage
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? '' 
-  : (localStorage.getItem('custom_api_url') || 'https://api-secret-xo-chat.onrender.com');
+// PRODUCTION BACKEND URL (Decoupled on Render)
+const BACKEND_URL = 'https://api-secret-chat.onrender.com';
 
-// Helper to build full URL
+// Auto-detects: uses local server if on localhost, otherwise connects to live Render cloud backend
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? '' 
+  : BACKEND_URL;
+
 function getApiUrl(path) {
   return `${API_BASE_URL}${path}`;
 }
@@ -27,7 +27,6 @@ let activeRecipientPhone = null;
 let ws = null;
 let titleTapCount = 0;
 let tapTimer = null;
-let currentVerificationToken = null;
 
 // Voice recording state
 let mediaRecorder = null;
@@ -179,13 +178,9 @@ closeModalBtn.addEventListener('click', () => {
 });
 
 function openSecretModal() {
-  if (token) {
-    checkAuthAndEnter();
-  } else {
-    secretModal.classList.remove('hidden');
-    showAuthStep('auth-login-step');
-    document.getElementById('unlock-passcode').focus();
-  }
+  secretModal.classList.remove('hidden');
+  showAuthStep('auth-login-step');
+  document.getElementById('login-phone').focus();
 }
 
 // === 3. AUTH STEPS & PASSCODE UNLOCK ===
@@ -216,103 +211,67 @@ document.getElementById('to-register-link').addEventListener('click', (e) => {
 document.getElementById('to-login-link').addEventListener('click', (e) => {
   e.preventDefault();
   showAuthStep('auth-login-step');
-  document.getElementById('unlock-passcode').focus();
+  document.getElementById('login-phone').focus();
 });
 
-async function submitPasscodeUnlock() {
+// LOGIN: phone + passcode
+async function submitLogin() {
   clearError();
-  const passcode = document.getElementById('unlock-passcode').value.trim();
-  if (!passcode) return showError('Please enter your numeric passcode');
+  const rawDigits = document.getElementById('login-phone').value.trim();
+  const passcode = document.getElementById('login-passcode').value.trim();
+
+  if (!rawDigits || rawDigits.length !== 10) return showError('Enter a valid 10-digit mobile number.');
+  if (!passcode) return showError('Enter your passcode.');
+
+  const phoneNumber = `+91${rawDigits}`;
 
   try {
-    const res = await fetch(getApiUrl('/auth/unlock'), {
+    const res = await fetch(getApiUrl('/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ passcode })
+      body: JSON.stringify({ phoneNumber, passcode })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Incorrect passcode');
-
+    if (!res.ok) throw new Error(data.error || 'Login failed');
     setSession(data.sessionToken, data.user);
   } catch (err) {
     showError(err.message);
   }
 }
 
-document.getElementById('unlock-submit-btn').addEventListener('click', submitPasscodeUnlock);
-document.getElementById('unlock-passcode').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') submitPasscodeUnlock();
+document.getElementById('login-submit-btn').addEventListener('click', submitLogin);
+document.getElementById('login-passcode').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') submitLogin();
 });
 
-// Send OTP
-document.getElementById('send-otp-btn').addEventListener('click', async () => {
+// REGISTER: phone + passcode (no OTP)
+async function submitRegister() {
   clearError();
   const rawDigits = document.getElementById('reg-phone').value.trim();
-  if (!rawDigits || rawDigits.length !== 10) {
-    return showError('Please enter a valid 10-digit Indian mobile number.');
-  }
+  const passcode = document.getElementById('reg-passcode').value.trim();
 
-  const phone = `+91${rawDigits}`;
+  if (!rawDigits || rawDigits.length !== 10) return showError('Enter a valid 10-digit mobile number.');
+  if (!passcode) return showError('Set a numeric passcode.');
 
-  try {
-    const res = await fetch(getApiUrl('/auth/request-otp'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneNumber: phone })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request OTP failed');
-
-    showAuthStep('auth-otp-step');
-    document.getElementById('otp-input').focus();
-  } catch (err) {
-    showError(err.message);
-  }
-});
-
-// Verify OTP
-document.getElementById('verify-otp-btn').addEventListener('click', async () => {
-  clearError();
-  const rawDigits = document.getElementById('reg-phone').value.trim();
-  const phone = `+91${rawDigits}`;
-  const otp = document.getElementById('otp-input').value.trim();
-  if (!otp || otp.length !== 6) return showError('Please enter the 6-digit OTP');
+  const phoneNumber = `+91${rawDigits}`;
 
   try {
-    const res = await fetch(getApiUrl('/auth/verify-otp'), {
+    const res = await fetch(getApiUrl('/auth/register'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneNumber: phone, otp })
+      body: JSON.stringify({ phoneNumber, passcode })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'OTP verification failed');
-
-    currentVerificationToken = data.verificationToken;
-    showAuthStep('auth-password-step');
-    document.getElementById('set-password-input').focus();
-  } catch (err) {
-    showError(err.message);
-  }
-});
-
-// Set Numeric Passcode
-document.getElementById('save-password-btn').addEventListener('click', async () => {
-  clearError();
-  const passcode = document.getElementById('set-password-input').value.trim();
-
-  try {
-    const res = await fetch(getApiUrl('/auth/set-password'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ verificationToken: currentVerificationToken, password: passcode })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Passcode setup failed');
-
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
     setSession(data.sessionToken, data.user);
   } catch (err) {
     showError(err.message);
   }
+}
+
+document.getElementById('register-submit-btn').addEventListener('click', submitRegister);
+document.getElementById('reg-passcode').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') submitRegister();
 });
 
 function setSession(newToken, user) {
@@ -767,10 +726,27 @@ document.getElementById('media-file-input').addEventListener('change', async (e)
 });
 
 function lockApp() {
-  if (ws) ws.close();
+  if (ws) { ws.close(); ws = null; }
+  token = null;
+  currentUser = null;
+  activeRecipientId = null;
+  activeRecipientPhone = null;
+  localStorage.removeItem('chat_token');
   document.getElementById('chat-view').classList.add('hidden');
   document.getElementById('game-view').classList.remove('hidden');
 }
 
 document.getElementById('lock-chat-btn').addEventListener('click', lockApp);
 document.getElementById('lock-app-btn').addEventListener('click', lockApp);
+
+// === AUTO-LOCK: When user leaves the app (tab hidden, phone goes to home/background) ===
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    lockApp();
+  }
+});
+
+// Fallback for mobile browsers (home button press, app switcher)
+window.addEventListener('pagehide', () => {
+  lockApp();
+});

@@ -21,7 +21,11 @@ const envSchema = z.object({
   R2_ACCOUNT_ID: z.string().optional(),
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
-  R2_BUCKET_NAME: z.string().default('private-chat-media')
+  R2_BUCKET_NAME: z.string().default('private-chat-media'),
+
+  // Real Cellular SMS (Fast2SMS)
+  USE_REAL_SMS: z.coerce.boolean().default(false),
+  FAST2SMS_API_KEY: z.string().optional()
 });
 
 const parsed = envSchema.safeParse(process.env);
